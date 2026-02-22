@@ -11,7 +11,7 @@ OmniLocal is a self-hosted WebUI and CLI that brings state-of-the-art language, 
 * **Text-to-Speech:** Realistic voice responses powered by the `Kokoro-82M` engine
 * **Conversational AI:** Chat intelligently using SOTA `Phi-4-mini-instruct` model
 * **Image Captioning:** Upload images and have them analyzed using `Qwen3-VL-2B-Instruct`
-* **Dual Interface:** Sleek WebUI using Gradio and fast lightweight CLI with Python
+* **Dual Interface:** Sleek WebUI using Gradio and lightweight CLI with Python
 
 ## 🛠️ Installation
 
