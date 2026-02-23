@@ -52,3 +52,7 @@ python app.py
 ```
 python cli.py
 ```
+
+## Author
+
+Ville Pakarinen (@vpakarinen2)
