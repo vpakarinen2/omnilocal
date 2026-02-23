@@ -5,6 +5,7 @@ accelerate
 soundfile
 kokoro
 numpy
+ddgs
 
 gradio>=5.15.0,<6.0.0
 fastapi>=0.115.2
