@@ -5,7 +5,7 @@
 OmniLocal is self-hosted WebUI and CLI that brings SOTA language, vision, and speech model to local hardware.
 
 ## 🖵 Screenshots
-![OmniLocal Chat Tab](screenshots/chat_screenshot.png)
+![OmniLocal Chat Tab](screenshots/web_search_update_screenshot.png)
 ![OmniLocal Vision Tab](screenshots/vision_screenshot.png)
 
 ## ✨ Features
