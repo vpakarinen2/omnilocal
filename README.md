@@ -1,7 +1,5 @@
 # 🌐 OmniLocal
 
-**private voice-enabled multimodal assistant.**
-
 Self-hosted WebUI and CLI that brings state-of-the-art language, vision, and speech model to local hardware.
 
 Now updated with web search!
