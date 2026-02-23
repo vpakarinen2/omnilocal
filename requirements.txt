@@ -3,6 +3,7 @@ huggingface_hub
 accelerate
 
 soundfile
+curl_cffi
 kokoro
 numpy
 ddgs
