@@ -2,7 +2,7 @@
 
 **private voice-enabled multimodal assistant.**
 
-OmniLocal is a self-hosted WebUI and CLI that brings SOTA language, vision, and speech models to your local hardware.
+OmniLocal is self-hosted WebUI and CLI that brings SOTA language, vision, and speech model to local hardware.
 
 ## ✨ Features
 
