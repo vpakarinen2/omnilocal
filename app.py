@@ -7,15 +7,19 @@ omni_engine.initialize()
 print("Models Loaded Successfully!")
 
 
-def chat_and_speak(user_input, chat_history, progress=gr.Progress()):
-    progress(0.2, desc="Thinking...")
-    
+def chat_and_speak(user_input, chat_history, use_search, progress=gr.Progress()):
+    web_context = ""
+    if use_search:
+        progress(0.2, desc="Searching the Web...")
+        web_context = omni_engine.search_web(user_input)
+        
+    progress(0.4, desc="Thinking...")
     messages = [{"role": "system", "content": omni_engine.SYSTEM_PROMPT}]
     for msg in chat_history or []:
         messages.append({"role": msg["role"], "content": msg["content"]})
     messages.append({"role": "user", "content": user_input})
 
-    response_text = omni_engine.generate_text(messages)
+    response_text = omni_engine.generate_text(messages, web_context)
 
     progress(0.8, desc="Generating Audio...")
     audio_path = omni_engine.generate_audio(response_text)
@@ -39,7 +43,6 @@ def vision_and_speak(image_path, prompt, progress=gr.Progress()):
     except Exception as e:
         return f"Error processing image: {str(e)}", None
 
-
 with gr.Blocks(title="OmniLocal", theme=gr.themes.Soft()) as demo:
     gr.Markdown("<center><h1>🌐 OmniLocal</h1></center>")
     gr.Markdown("<center><i>private voice-enabled assistant.</i></center>")
@@ -48,18 +51,19 @@ with gr.Blocks(title="OmniLocal", theme=gr.themes.Soft()) as demo:
         with gr.Tab("💬 Chat"):
             chatbot = gr.Chatbot(height=450, type="messages", label="Chat")
             with gr.Row():
-                chat_txt = gr.Textbox(show_label=False, placeholder="Type your message here...", container=False, scale=8)
+                chat_txt = gr.Textbox(show_label=False, placeholder="Type your message here...", container=False, scale=7)
+                web_search_toggle = gr.Checkbox(label="🌐 Search Web", scale=1)
                 chat_btn = gr.Button("Send", variant="primary", scale=1)
-            chat_audio = gr.Audio(visible=True, autoplay=True, label="TTS")
+            chat_audio = gr.Audio(visible=True, autoplay=True, label="Chat TTS")
             
-            chat_txt.submit(chat_and_speak, inputs=[chat_txt, chatbot], outputs=[chatbot, chat_txt, chat_audio])
-            chat_btn.click(chat_and_speak, inputs=[chat_txt, chatbot], outputs=[chatbot, chat_txt, chat_audio])
+            chat_txt.submit(chat_and_speak, inputs=[chat_txt, chatbot, web_search_toggle], outputs=[chatbot, chat_txt, chat_audio])
+            chat_btn.click(chat_and_speak, inputs=[chat_txt, chatbot, web_search_toggle], outputs=[chatbot, chat_txt, chat_audio])
             
         with gr.Tab("👁️ Vision"):
             with gr.Row():
                 with gr.Column(scale=1):
                     vis_image = gr.Image(type="filepath", label="Upload Image")
-                    vis_prompt = gr.Textbox(label="Instructions", value="Describe this image in a natural, conversational way.")
+                    vis_prompt = gr.Textbox(label="Instructions", value="Describe this image in three sentences.")
                     vis_btn = gr.Button("Generate Caption", variant="primary")
                 with gr.Column(scale=1):
                     vis_output = gr.Textbox(label="Generated Caption", lines=6, interactive=False)
