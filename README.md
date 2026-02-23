@@ -12,6 +12,7 @@ OmniLocal is self-hosted WebUI and CLI that brings SOTA language, vision, and sp
 
 * **100% Local & Private:** Runs entirely on your GPU, No API keys or subscriptions
 * **VRAM Hot-Swapping:** A built-in `ModelManager` hot-swaps models in and out of GPU memory
+* **Web Search:** Built-in web search using DuckDuckGo that bypasses model's training cutoff date.
 * **Text-to-Speech:** Realistic voice responses powered by the `Kokoro-82M` engine
 * **Conversational AI:** Chat intelligently using SOTA `Phi-4-mini-instruct` model
 * **Image Captioning:** Upload images and have them analyzed using `Qwen3-VL-2B-Instruct`
