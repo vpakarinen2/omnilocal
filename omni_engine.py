@@ -8,6 +8,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, Qwen3VLForConditio
 from qwen_vl_utils import process_vision_info
 from datetime import datetime
 from kokoro import KPipeline
+from ddgs import DDGS
 
 
 AUDIO_DIR = "audio"
@@ -71,8 +72,38 @@ def load_vision_brain():
     active_slot = "vision"
 
 
-def generate_text(messages):
+def search_web(query, max_results=3):
+    print(f"\n[System] Searching the web for: '{query}'...")
+    try:
+        results = DDGS().text(query, max_results=max_results)
+        if not results:
+            return "No web search results found."
+            
+        formatted_results = "CURRENT WEB CONTEXT:\n"
+        for i, res in enumerate(results):
+            formatted_results += f"{i+1}. {res['title']}: {res['body']}\n"
+            
+        return formatted_results
+    except Exception as e:
+        print(f"[Warning] Web search failed: {e}")
+        return ""
+
+
+def generate_text(messages, web_context=""):
     load_text_brain()
+    
+    if web_context:
+        original_query = messages[-1]["content"]
+        forced_prompt = (
+            f"Here is live web context I just searched for:\n"
+            f"---------------------\n"
+            f"{web_context}\n"
+            f"---------------------\n"
+            f"IGNORE your internal knowledge cutoff date. Based EXCLUSIVELY on the live context above, "
+            f"answer the following question concisely: {original_query}"
+        )
+        messages[-1]["content"] = forced_prompt
+
     inputs = llm_tokenizer.apply_chat_template(
         messages, return_tensors="pt", add_generation_prompt=True, return_dict=True
     ).to(llm_model.device)
@@ -90,6 +121,7 @@ def generate_vision(image_path, prompt):
     
     text_prompt = vision_processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
     image_inputs, video_inputs = process_vision_info(messages)
+    
     inputs = vision_processor(text=[text_prompt], images=image_inputs, videos=video_inputs, padding=True, return_tensors="pt").to(vision_model.device)
     
     with torch.no_grad():
@@ -110,5 +142,4 @@ def generate_audio(text):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_filename = os.path.join(AUDIO_DIR, f"omnilocal_response_{timestamp}.wav")
     sf.write(output_filename, full_audio, 24000)
-    
     return output_filename
