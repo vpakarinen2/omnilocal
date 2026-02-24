@@ -1,47 +1,90 @@
+import os
 import gradio as gr
-import omni_engine
+import requests
 
 
-print("Initializing OmniLocal WebUI Pipeline...\n")
-omni_engine.initialize()
-print("Models Loaded Successfully!")
+print("Initializing OmniLocal WebUI Client...\n")
+
+API_URL = "http://127.0.0.1:8000"
+CLIENT_AUDIO_DIR = "client_audio"
+os.makedirs(CLIENT_AUDIO_DIR, exist_ok=True)
+
+
+def download_audio(audio_url):
+    """Helper to download the audio file from the server for Gradio to play securely."""
+    try:
+        filename = audio_url.split("/")[-1]
+        local_path = os.path.join(CLIENT_AUDIO_DIR, filename)
+        response = requests.get(audio_url)
+        with open(local_path, "wb") as f:
+            f.write(response.content)
+        return local_path
+    except Exception as e:
+        print(f"Failed to download audio: {e}")
+        return None
 
 
 def chat_and_speak(user_input, chat_history, use_search, progress=gr.Progress()):
-    web_context = ""
-    if use_search:
-        progress(0.2, desc="Searching the Web...")
-        web_context = omni_engine.search_web(user_input)
-        
-    progress(0.4, desc="Thinking...")
-    messages = [{"role": "system", "content": omni_engine.SYSTEM_PROMPT}]
-    for msg in chat_history or []:
-        messages.append({"role": msg["role"], "content": msg["content"]})
-    messages.append({"role": "user", "content": user_input})
-
-    response_text = omni_engine.generate_text(messages, web_context)
-
-    progress(0.8, desc="Generating Audio...")
-    audio_path = omni_engine.generate_audio(response_text)
-
-    chat_history.append({"role": "user", "content": user_input})
-    chat_history.append({"role": "assistant", "content": response_text})
+    progress(0.2, desc="Sending request to server...")
     
-    return chat_history, "", audio_path
+    formatted_history = []
+    if chat_history:
+        for msg in chat_history:
+            formatted_history.append({"role": msg["role"], "content": msg["content"]})
+            
+    payload = {
+        "user_input": user_input,
+        "chat_history": formatted_history,
+        "use_search": use_search
+    }
+    
+    try:
+        progress(0.5, desc="Waiting for OmniLocal API...")
+        response = requests.post(f"{API_URL}/api/chat", json=payload)
+        response.raise_for_status()
+        data = response.json()
+        
+        response_text = data["response_text"]
+        
+        progress(0.8, desc="Downloading Audio...")
+        local_audio_path = download_audio(data["audio_url"])
+        
+        chat_history.append({"role": "user", "content": user_input})
+        chat_history.append({"role": "assistant", "content": response_text})
+        
+        return chat_history, "", local_audio_path
+        
+    except requests.exceptions.RequestException as e:
+        error_msg = f"[Connection Error] Is the FastAPI server running? Details: {e}"
+        chat_history.append({"role": "user", "content": user_input})
+        chat_history.append({"role": "assistant", "content": error_msg})
+        return chat_history, "", None
 
 
 def vision_and_speak(image_path, prompt, progress=gr.Progress()):
     if not image_path:
         return "Please upload an image first.", None
         
-    progress(0.2, desc="Analyzing Image...")
+    progress(0.2, desc="Sending image to server...")
+    payload = {
+        "image_path": image_path,
+        "prompt": prompt
+    }
+    
     try:
-        response_text = omni_engine.generate_vision(image_path, prompt)
-        progress(0.8, desc="Generating Audio...")
-        audio_path = omni_engine.generate_audio(response_text)
-        return response_text, audio_path
-    except Exception as e:
-        return f"Error processing image: {str(e)}", None
+        progress(0.5, desc="Waiting for Vision API...")
+        response = requests.post(f"{API_URL}/api/vision", json=payload)
+        response.raise_for_status()
+        data = response.json()
+        
+        progress(0.8, desc="Downloading Audio...")
+        local_audio_path = download_audio(data["audio_url"])
+        
+        return data["response_text"], local_audio_path
+        
+    except requests.exceptions.RequestException as e:
+        return f"[Connection Error] Is the FastAPI server running? Details: {e}", None
+
 
 with gr.Blocks(title="OmniLocal", theme=gr.themes.Soft()) as demo:
     gr.Markdown("<center><h1>🌐 OmniLocal</h1></center>")
@@ -49,7 +92,7 @@ with gr.Blocks(title="OmniLocal", theme=gr.themes.Soft()) as demo:
     
     with gr.Tabs():
         with gr.Tab("💬 Chat"):
-            chatbot = gr.Chatbot(height=450, type="messages", label="Chat")
+            chatbot = gr.Chatbot(height=450, type="messages", label="Chat", allow_tags=True)
             with gr.Row():
                 chat_txt = gr.Textbox(show_label=False, placeholder="Type your message here...", container=False, scale=7)
                 web_search_toggle = gr.Checkbox(label="🌐 Search Web", scale=1)
