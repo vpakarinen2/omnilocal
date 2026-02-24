@@ -2,6 +2,7 @@ transformers>=4.49.0
 huggingface_hub
 accelerate
 
+qwen-vl-utils
 soundfile
 curl_cffi
 kokoro
@@ -11,3 +12,5 @@ ddgs
 gradio>=5.15.0,<6.0.0
 fastapi>=0.115.2
 pydantic>=2.9.0
+uvicorn>=0.34.0
+uv>=0.6.0
