@@ -47,6 +47,8 @@ pip install -r requirements.txt
 
 ### Start Server
 
+**Note: you need to run the server first before cli or webui**
+
 ```
 uvicorn server:app
 ```
