@@ -41,7 +41,6 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 ### 4. Install Requirements
 ```
 pip install -r requirements.txt
-pip install qwen-vl-utils
 ```
 
 ## 🚀 Usage
