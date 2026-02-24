@@ -45,6 +45,12 @@ pip install -r requirements.txt
 
 ## 🚀 Usage
 
+### Start Server
+
+```
+uvicorn server:app
+```
+
 ### WebUI
 ```
 python app.py
@@ -53,6 +59,14 @@ python app.py
 ### CLI
 ```
 python cli.py
+```
+
+### CLI Commands
+
+```
+/search [query] to make a web search.
+
+/image path/to/image.jpg to analyze an image.
 ```
 
 ## Author
