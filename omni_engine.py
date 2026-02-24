@@ -14,7 +14,7 @@ from ddgs import DDGS
 AUDIO_DIR = "audio"
 os.makedirs(AUDIO_DIR, exist_ok=True)
 
-MAX_NEW_TOKENS = 150
+MAX_NEW_TOKENS = 250
 TEMPERATURE = 0.7
 SYSTEM_PROMPT = "You are OmniLocal, a highly intelligent and concise conversational AI. Keep your answers brief, natural, and easy to read aloud. Do not use asterisks or markdown formatting."
 
