@@ -31,7 +31,6 @@ def download_audio(audio_url):
     except:
         return audio_url
 
-
 while True:
     user_input = input("\nUser: ").strip()
     if user_input.lower() in ['exit', 'quit']:
