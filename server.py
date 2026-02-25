@@ -1,6 +1,7 @@
+import shutil
 import os
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
 from typing import List, Optional
 from pydantic import BaseModel
@@ -16,7 +17,6 @@ async def startup_event():
     print("\n[System] Starting FastAPI Server...")
     omni_engine.initialize()
     print("[System] OmniLocal API is running and ready for requests!\n")
-
 
 class ChatMessage(BaseModel):
     role: str
@@ -34,7 +34,9 @@ class VisionRequest(BaseModel):
 class OmniResponse(BaseModel):
     response_text: str
     audio_url: str
-
+    
+class TranscribeResponse(BaseModel):
+    text: str
 
 @app.post("/api/chat", response_model=OmniResponse)
 async def chat_endpoint(request: ChatRequest):
@@ -55,10 +57,8 @@ async def chat_endpoint(request: ChatRequest):
         audio_url = f"http://127.0.0.1:8000/audio/{audio_filename}"
 
         return OmniResponse(response_text=response_text, audio_url=audio_url)
-    
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @app.post("/api/vision", response_model=OmniResponse)
 async def vision_endpoint(request: VisionRequest):
@@ -73,16 +73,28 @@ async def vision_endpoint(request: VisionRequest):
         audio_url = f"http://127.0.0.1:8000/audio/{audio_filename}"
 
         return OmniResponse(response_text=response_text, audio_url=audio_url)
-        
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/transcribe", response_model=TranscribeResponse)
+async def transcribe_endpoint(file: UploadFile = File(...)):
+    temp_path = f"temp_{file.filename}"
+    with open(temp_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+        
+    try:
+        transcribed_text = omni_engine.transcribe_audio(temp_path)
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        return TranscribeResponse(text=transcribed_text)
+    except Exception as e:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/audio/{filename}")
 async def get_audio(filename: str):
-    """Serves the generated .wav files directly to the browser/client."""
     file_path = os.path.join(omni_engine.AUDIO_DIR, filename)
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Audio file not found.")
-    
     return FileResponse(file_path, media_type="audio/wav")
