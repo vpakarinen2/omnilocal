@@ -9,7 +9,9 @@ kokoro
 numpy
 ddgs
 
+python-multipart>=0.0.9
 gradio>=5.15.0,<6.0.0
+faster-whisper>=1.0.0
 fastapi>=0.115.2
 pydantic>=2.9.0
 uvicorn>=0.34.0
