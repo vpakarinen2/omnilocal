@@ -1,6 +1,6 @@
-import os
 import gradio as gr
 import requests
+import os
 
 
 print("Initializing OmniLocal WebUI Client...\n")
@@ -11,7 +11,6 @@ os.makedirs(CLIENT_AUDIO_DIR, exist_ok=True)
 
 
 def download_audio(audio_url):
-    """Helper to download the audio file from the server for Gradio to play securely."""
     try:
         filename = audio_url.split("/")[-1]
         local_path = os.path.join(CLIENT_AUDIO_DIR, filename)
@@ -25,6 +24,9 @@ def download_audio(audio_url):
 
 
 def chat_and_speak(user_input, chat_history, use_search, progress=gr.Progress()):
+    if not user_input.strip():
+        return chat_history, "", None
+        
     progress(0.2, desc="Sending request to server...")
     
     formatted_history = []
@@ -61,6 +63,32 @@ def chat_and_speak(user_input, chat_history, use_search, progress=gr.Progress())
         return chat_history, "", None
 
 
+def transcribe_and_chat(audio_path, chat_history, use_search, progress=gr.Progress()):
+    if not audio_path:
+        return chat_history, "", None, None
+        
+    progress(0.1, desc="🎙️ Transcribing...")
+    try:
+        with open(audio_path, "rb") as f:
+            res = requests.post(f"{API_URL}/api/transcribe", files={"file": f})
+        res.raise_for_status()
+        user_text = res.json().get("text", "").strip()
+        
+    except Exception as e:
+        print(f"Transcription error: {e}")
+        error_msg = "[Transcription Error] Could not understand audio or server is down."
+        chat_history.append({"role": "user", "content": "🎤 (Voice Message)"})
+        chat_history.append({"role": "assistant", "content": error_msg})
+        return chat_history, "", None, None
+
+    if not user_text:
+        return chat_history, "", None, None
+        
+    history, txt, audio = chat_and_speak(user_text, chat_history, use_search, progress)
+    
+    return history, txt, audio, None
+
+
 def vision_and_speak(image_path, prompt, progress=gr.Progress()):
     if not image_path:
         return "Please upload an image first.", None
@@ -93,11 +121,20 @@ with gr.Blocks(title="OmniLocal", theme=gr.themes.Soft()) as demo:
     with gr.Tabs():
         with gr.Tab("💬 Chat"):
             chatbot = gr.Chatbot(height=450, type="messages", label="Chat", allow_tags=True)
+            
             with gr.Row():
-                chat_txt = gr.Textbox(show_label=False, placeholder="Type your message here...", container=False, scale=7)
-                web_search_toggle = gr.Checkbox(label="🌐 Search Web", scale=1)
-                chat_btn = gr.Button("Send", variant="primary", scale=1)
+                with gr.Column(scale=5):
+                    mic_input = gr.Audio(sources=["microphone"], type="filepath", label="Voice")
+                    chat_txt = gr.Textbox(show_label=False, placeholder="Type your message here...")
+                    
+                with gr.Column(scale=1):
+                    web_search_toggle = gr.Checkbox(label="🌐 Search Web")
+                    chat_btn = gr.Button("Send", variant="primary", size="lg")
+                
             chat_audio = gr.Audio(visible=True, autoplay=True, label="Chat TTS")
+            
+            mic_input.stop_recording(transcribe_and_chat, inputs=[mic_input, chatbot, web_search_toggle], outputs=[chatbot, chat_txt, chat_audio, mic_input])
+            mic_input.upload(transcribe_and_chat, inputs=[mic_input, chatbot, web_search_toggle], outputs=[chatbot, chat_txt, chat_audio, mic_input])
             
             chat_txt.submit(chat_and_speak, inputs=[chat_txt, chatbot, web_search_toggle], outputs=[chatbot, chat_txt, chat_audio])
             chat_btn.click(chat_and_speak, inputs=[chat_txt, chatbot, web_search_toggle], outputs=[chatbot, chat_txt, chat_audio])
