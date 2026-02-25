@@ -2,12 +2,12 @@
 
 Self-hosted WebUI and CLI that brings state-of-the-art language, vision, and speech model to local hardware.
 
-Now updated with web search!
+Now updated with web search, current date and time, and microphone support.
 
 ---
 
 ## 🖵 Screenshots
-![OmniLocal Chat Tab](screenshots/web_search_update_screenshot.png)
+![OmniLocal Chat Tab](screenshots/date_time_mic_update_screenshot.png)
 ![OmniLocal Vision Tab](screenshots/vision_screenshot.png)
 
 ## ✨ Features
