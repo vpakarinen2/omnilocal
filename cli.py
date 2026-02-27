@@ -1,12 +1,14 @@
+import subprocess
+import platform
 import requests
 import os
 
 
 print("Initializing OmniLocal CLI Client...\n")
 
-API_URL = "http://127.0.0.1:8000"
-AUDIO_DIR = "audio"
-os.makedirs(AUDIO_DIR, exist_ok=True)
+API_URL = os.getenv("OMNI_API_URL", "http://127.0.0.1:8000")
+CLIENT_AUDIO_DIR = "client_audio" 
+os.makedirs(CLIENT_AUDIO_DIR, exist_ok=True)
 
 print("="*25)
 print("OmniLocal (CLI)")
@@ -23,13 +25,30 @@ def download_audio(audio_url):
     """Helper to download the audio file from the server."""
     try:
         filename = audio_url.split("/")[-1]
-        local_path = os.path.join(AUDIO_DIR, filename)
+        local_path = os.path.join(CLIENT_AUDIO_DIR, filename) 
         response = requests.get(audio_url)
+
+        response.raise_for_status() 
+        
         with open(local_path, "wb") as f:
             f.write(response.content)
         return local_path
-    except:
+    except Exception as e:
+        print(f"  [Warning] Could not download audio: {e}") 
         return audio_url
+
+
+def play_audio(file_path):
+    try:
+        if platform.system() == "Darwin":       
+            subprocess.run(["afplay", file_path])
+        elif platform.system() == "Linux":      
+            subprocess.run(["aplay", file_path])
+        elif platform.system() == "Windows":    
+            os.startfile(file_path)
+    except Exception as e:
+        print(f"[Audio Error] Could not play audio: {e}")
+
 
 while True:
     user_input = input("\nUser: ").strip()
@@ -51,17 +70,26 @@ while True:
             continue
             
         prompt = input("Image Prompt (Press Enter for 'Describe this image'): ").strip()
-        if not prompt: prompt = "Describe this image in a natural, conversational way."
+        if not prompt: prompt = "Describe this image in three sentences."
             
         print("\nSending image to API...")
         try:
-            res = requests.post(f"{API_URL}/api/vision", json={"image_path": image_path, "prompt": prompt})
+            with open(image_path, "rb") as image_file:
+                res = requests.post(
+                    f"{API_URL}/api/vision", 
+                    data={"prompt": prompt},
+                    files={"image_file": image_file}
+                )
             res.raise_for_status()
             data = res.json()
             
             print(f"OmniLocal: {data['response_text']}")
             saved_path = download_audio(data['audio_url'])
             print(f"(Audio saved to {saved_path})")
+            
+            if os.path.exists(saved_path):
+                play_audio(saved_path)
+                
         except requests.exceptions.RequestException as e:
             print(f"[Connection Error] Make sure your FastAPI server is running. Details: {e}")
 
@@ -93,6 +121,9 @@ while True:
             print(f"OmniLocal: {response_text}")
             saved_path = download_audio(data['audio_url'])
             print(f"(Audio saved to {saved_path})")
+            
+            if os.path.exists(saved_path):
+                play_audio(saved_path)
             
         except requests.exceptions.RequestException as e:
             print(f"[Connection Error] Make sure your FastAPI server is running. Details: {e}")
