@@ -15,9 +15,9 @@ from ddgs import DDGS
 AUDIO_DIR = "audio"
 os.makedirs(AUDIO_DIR, exist_ok=True)
 
-MAX_NEW_TOKENS = 150
+MAX_NEW_TOKENS = 250
 TEMPERATURE = 0.7
-SYSTEM_PROMPT = "You are OmniLocal, a highly intelligent and concise conversational AI. Keep your answers brief, natural, and easy to read aloud. Do not use asterisks or markdown formatting."
+SYSTEM_PROMPT = "You are OmniLocal, a highly intelligent and concise conversational AI. Keep your answers brief, natural, and easy to read aloud. Do not use asterisks or markdown formatting. Do not use more than five sentences and always end the answer with a period. Do not mention that you are an AI."
 
 tts_pipeline = None
 stt_model = None
@@ -97,10 +97,12 @@ def search_web(query, max_results=5):
 
 def generate_text(messages, web_context=""):
     load_text_brain()
+
+    messages_copy = list(messages)
     
     if web_context:
-        original_query = messages[-1]["content"]
-        current_time = datetime.now().strftime("%A, %B %d, %Y %I:%M %p") # GET LIVE TIME
+        original_query = messages_copy[-1]["content"]
+        current_time = datetime.now().strftime("%A, %B %d, %Y %I:%M %p") 
         
         forced_prompt = (
             f"Here is live web context I just searched for.\n"
@@ -111,10 +113,10 @@ def generate_text(messages, web_context=""):
             f"IGNORE your internal knowledge cutoff date. Do NOT say you cannot browse the internet or access real-time data. "
             f"Based EXCLUSIVELY on the live context above, answer the following question concisely: {original_query}"
         )
-        messages[-1]["content"] = forced_prompt
+        messages_copy[-1] = {"role": messages_copy[-1]["role"], "content": forced_prompt}
 
     inputs = llm_tokenizer.apply_chat_template(
-        messages, return_tensors="pt", add_generation_prompt=True, return_dict=True
+        messages_copy, return_tensors="pt", add_generation_prompt=True, return_dict=True
     ).to(llm_model.device)
     
     with torch.no_grad():
