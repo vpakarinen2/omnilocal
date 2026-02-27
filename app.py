@@ -5,7 +5,7 @@ import os
 
 print("Initializing OmniLocal WebUI Client...\n")
 
-API_URL = "http://127.0.0.1:8000"
+API_URL = os.getenv("OMNI_API_URL", "http://127.0.0.1:8000")
 CLIENT_AUDIO_DIR = "client_audio"
 os.makedirs(CLIENT_AUDIO_DIR, exist_ok=True)
 
@@ -94,14 +94,15 @@ def vision_and_speak(image_path, prompt, progress=gr.Progress()):
         return "Please upload an image first.", None
         
     progress(0.2, desc="Sending image to server...")
-    payload = {
-        "image_path": image_path,
-        "prompt": prompt
-    }
     
     try:
         progress(0.5, desc="Waiting for Vision API...")
-        response = requests.post(f"{API_URL}/api/vision", json=payload)
+        with open(image_path, "rb") as image_file:
+            response = requests.post(
+                f"{API_URL}/api/vision", 
+                data={"prompt": prompt},
+                files={"image_file": image_file}
+            )
         response.raise_for_status()
         data = response.json()
         
