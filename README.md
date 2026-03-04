@@ -1,8 +1,8 @@
 # 🌐 OmniLocal
 
-Self-hosted WebUI and CLI that brings state-of-the-art language, vision, and speech model to local hardware.
+Self-hosted WebUI/CLI that brings state-of-the-art language, vision, and speech model to local hardware.
 
-Now updated with web search, current date and time, and microphone support.
+Now updated with web search and microphone support.
 
 ---
 
