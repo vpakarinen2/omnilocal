@@ -10,7 +10,7 @@ Now updated with web search and microphone support.
 ![OmniLocal Chat Tab](screenshots/date_time_mic_update_screenshot.png)
 ![OmniLocal Vision Tab](screenshots/vision_screenshot.png)
 
-## ✨ Features
+## ⭐ Features
 
 * **100% Local & Private:** Runs entirely on your GPU, No API keys or subscriptions
 * **VRAM Hot-Swapping:** A built-in `ModelManager` hot-swaps models in and out of GPU memory
